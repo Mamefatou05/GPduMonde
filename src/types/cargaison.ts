@@ -10,8 +10,8 @@ export interface ICargaison {
     lieu_depart: string;
     lieu_arrivee: string;
     produits: Produit[];
-    dateDepart: Date;
-    dateArrivee: Date;
+    dateDepart: string;
+    dateArrivee: string;
     mode_remplissage: string;
     etat_Avancement: string;
     etat_globale: string;
@@ -24,7 +24,6 @@ export interface ICargaison {
     sommePoids(): number;
     nbProduits(): number;
 }
-
 export abstract class Cargaison implements ICargaison {
     static dernierNumero: number = 0; // Attribut statique pour suivre le dernier numéro attribué
 
@@ -36,8 +35,8 @@ export abstract class Cargaison implements ICargaison {
     lieu_depart: string;
     lieu_arrivee: string;
     produits: Produit[];
-    dateDepart: Date;
-    dateArrivee: Date;
+    dateDepart: string;
+    dateArrivee: string;
     mode_remplissage: string;
     etat_Avancement: string;
     etat_globale: string;
@@ -52,25 +51,24 @@ export abstract class Cargaison implements ICargaison {
         produitMax: number | null,
         type: string,
         lieu_depart: string,
-        lieu_arrivee:string,
+        lieu_arrivee: string,
         mode_remplissage: string,
-
     ) {
-        this.dateDepart = new Date(dateDepart);
-        this.dateArrivee = new Date(dateArrivee);
+        this.id = ++Cargaison.dernierNumero; // Increment last number and assign to id
+        this.numero = Cargaison.genererNumero();
         this.poidsMax = poidsMax;
         this.produitMax = produitMax;
-        this.id = Cargaison.length + 1;
-        this.numero = Cargaison.genererNumero();
-        this.etat_Avancement = "En attente";
-        this.etat_globale = "ouvert";
         this.prix_total = 0; // Initialize prix_total to 0
         this.lieu_depart = lieu_depart;
         this.lieu_arrivee = lieu_arrivee;
-        this.mode_remplissage = mode_remplissage;
         this.produits = []; // Initialize produits to an empty array
-        this.distanceKm = distance;
+        this.dateDepart = this.formatDate(new Date(dateDepart));
+        this.dateArrivee = this.formatDate(new Date(dateArrivee));
+        this.mode_remplissage = mode_remplissage;
+        this.etat_Avancement = "En attente";
+        this.etat_globale = "ouvert";
         this.type = type;
+        this.distanceKm = distance;
     }
 
     ajouterProduit(produit: Produit): void {
@@ -98,12 +96,19 @@ export abstract class Cargaison implements ICargaison {
         console.log(`Produit ajouté: ${produit.libelle}`);
         console.log(`Montant actuel de la cargaison: ${this.sommeTotale()}`);
     }
-   // Méthode statique pour générer le prochain numéro de cargaison
-   private static genererNumero(): string {
-    const prochainNumero = Cargaison.dernierNumero + 1;
-    Cargaison.dernierNumero = prochainNumero;
-    return `CRG${prochainNumero.toString().padStart(3, '0')}`;
-}
+
+    // Méthode statique pour générer le prochain numéro de cargaison
+    private static genererNumero(): string {
+        const prochainNumero = Cargaison.dernierNumero;
+        return `CRG${prochainNumero.toString().padStart(3, '0')}`;
+    }
+
+    private formatDate(date: Date): string {
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Les mois sont indexés de 0 à 11
+        const year = date.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    }
 
     abstract calculerFrais(produit: Produit): number;
 

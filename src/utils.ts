@@ -94,6 +94,24 @@ export const validators = {
             errorMessage: isValid ? '' : 'Le poids doit être un nombre positif.'
         };
     },
+    isPositiveNumberNull: (value: string) => {
+        // Vérifiez si la chaîne est vide
+        if (value.trim() === '') {
+            return {
+                valid: true,
+                errorMessage: ''
+            };
+        }
+        // Convertissez la valeur en nombre
+        const number = parseFloat(value);
+        // Vérifiez si la valeur est un nombre positif
+        const isValid = !isNaN(number) && number > 0;
+        return {
+            valid: isValid,
+            errorMessage: isValid ? '' : 'Le poids doit être un nombre positif.'
+        };
+    },
+    
     isValidDate: (value: string) => {
         const date = new Date(value);
         const isValid = !isNaN(date.getTime());
