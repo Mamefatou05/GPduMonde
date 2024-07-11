@@ -89,3 +89,108 @@ if ($requestMethod === 'POST') {
         echo json_encode(array("message" => "Cargaison ajoutée avec succès"));
     }
 }
+
+// Gestion des requêtes PUT ou PATCH
+if ($requestMethod === 'PUT' || $requestMethod === 'PATCH') {
+    $updatedCargaison = json_decode(file_get_contents('php://input'), true);
+    foreach ($data['cargaisons'] as &$cargaison) {
+        if ($cargaison['id'] == $updatedCargaison['id']) {
+            // Si la cargaison est fermée, vérifier si elle peut être rouverte
+            if ($cargaison['state'] === 'fermé' && $updatedCargaison['state'] === 'ouvert') {
+                if ($cargaison['advancement'] === 'EN ATTENTE') {
+                    $cargaison['state'] = 'ouvert';
+                } else {
+                    http_response_code(403); // Forbidden
+                    echo json_encode(array("message" => "La cargaison ne peut pas être rouverte"));
+                    return;
+                }
+            } else {
+                $cargaison = $updatedCargaison;
+            }
+            saveData($data);
+            http_response_code(200);
+            echo json_encode(array("message" => "Cargaison mise à jour avec succès"));
+            return;
+        }
+    }
+    http_response_code(404);
+    echo json_encode(array("message" => "Cargaison non trouvée"));
+}
+
+// Gestion des requêtes DELETE
+if ($requestMethod === 'DELETE') {
+    parse_str(file_get_contents("php://input"), $deleteParams);
+    if ($cargaisonId && $productAction) {
+        $productId = $deleteParams['productId'];
+        foreach ($data['cargaisons'] as &$cargaison) {
+            if ($cargaison['id'] == $cargaisonId) {
+                foreach ($cargaison['products'] as $key => $product) {
+                    if ($product['id'] == $productId) {
+                        unset($cargaison['products'][$key]);
+                        $cargaison['products'] = array_values($cargaison['products']); // Réindexation des clés
+                        saveData($data);
+                        http_response_code(200);
+                        echo json_encode(array("message" => "Produit supprimé avec succès de la cargaison"));
+                        return;
+                    }
+                }
+                http_response_code(404);
+                echo json_encode(array("message" => "Produit non trouvé dans la cargaison"));
+                return;
+            }
+        }
+        http_response_code(404);
+        echo json_encode(array("message" => "Cargaison non trouvée"));
+    } else {
+        foreach ($data['cargaisons'] as $key => $cargaison) {
+            if ($cargaison['id'] == $deleteParams['id']) {
+                unset($data['cargaisons'][$key]);
+                $data['cargaisons'] = array_values($data['cargaisons']); // Réindexation des clés
+                saveData($data);
+                http_response_code(200);
+                echo json_encode(array("message" => "Cargaison supprimée avec succès"));
+                return;
+            }
+        }
+        http_response_code(404);
+        echo json_encode(array("message" => "Cargaison non trouvée"));
+    }
+}
+
+function updateProductState(&$products, $productId, $newState) {
+    foreach ($products as &$product) {
+        if ($product['id'] == $productId) {
+            $product['state'] = $newState;
+            if ($newState === 'RECUPERE') {
+                $product['code'] = null; // Détruire le code du colis
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+
+// Gestion des changements d'état pour les produits (colis)
+if ($requestMethod === 'PATCH' && $cargaisonId && $productAction) {
+    $inputData = json_decode(file_get_contents('php://input'), true);
+    $productId = $inputData['productId'];
+    $newState = $inputData['state'];
+
+    foreach ($data['cargaisons'] as &$cargaison) {
+        if ($cargaison['id'] == $cargaisonId) {
+            if (updateProductState($cargaison['products'], $productId, $newState)) {
+                saveData($data);
+                http_response_code(200);
+                echo json_encode(array("message" => "État du produit mis à jour avec succès"));
+            } else {
+                http_response_code(404);
+                echo json_encode(array("message" => "Produit non trouvé"));
+            }
+            return;
+        }
+    }
+    http_response_code(404);
+    echo json_encode(array("message" => "Cargaison non trouvée"));
+}
+?>
