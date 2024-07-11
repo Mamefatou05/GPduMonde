@@ -1,18 +1,19 @@
-import { FormField, validators, SubmitCallback, Formulaire } from "./utils";
+import { FormField, validators, SubmitCallback, Formulaire, isDateAfter} from "./utils";
 import {readDataFromServer, saveNewCargoToServer} from "./api";
-import { Cargaison, CargaisonAerienne, CargaisonMaritime, CargaisonRoutiere, ICargaison } from "./types/cargaison";
+import { Cargaison, CargaisonAerienne, CargaisonMaritime, CargaisonRoutiere, ICargaison , formatDate } from "./types/cargaison";
 import { Alimentaire, Chimique, Materiel } from "./produit";
+let cargos: ICargaison[] = [];
+let filteredCargos: ICargaison[] = [];
+let currentPage = 1;
+const rowsPerPage = 3;
 
+
+// mode de remplissage
 const produitMaxRadio = document.getElementById('produitMaxRadio') as HTMLInputElement ;
 const poidsMaxRadio = document.getElementById('poidsMaxRadio') as HTMLInputElement ;
 const champProduits = document.getElementById('champ_produits') as HTMLElement ;
 const champPoids = document.getElementById('champ_poids') as HTMLElement  ;
-
-
-
 const modeRemplissage = document.getElementById('mode_remplissage_hidden') as HTMLInputElement;
-
-
 const radios = document.querySelectorAll('input[name="mode_remplissage"]');
 radios.forEach(radio => {
     radio.addEventListener('change', function () {
@@ -27,8 +28,7 @@ radios.forEach(radio => {
         }
     });
 });
-
-// Initial state check
+// Initialiser
 if (produitMaxRadio.checked) {
     champProduits.classList.remove('hidden');
     champPoids.classList.add('hidden');
@@ -42,10 +42,6 @@ if (produitMaxRadio.checked) {
 // console.log(modeRemplissage);
 // console.log(modeRemplissage.value);
 
-let cargos: ICargaison[] = [];
-let filteredCargos: ICargaison[] = [];
-let currentPage = 1;
-const rowsPerPage = 3;
 // Fonction pour récupérer les cargos
 export async function fetchCargos(): Promise<void> {
     try {
@@ -61,21 +57,114 @@ export async function fetchCargos(): Promise<void> {
     }
 }
 
+export function afficherCargaison(cargaison: ICargaison) {
+    const cargaisonName = document.getElementById('cargaison-name') as HTMLElement;
+    const cargaisonDate = document.getElementById('cargaison-date') as HTMLElement;
+    const cargaisonDepart = document.getElementById('cargaison-depart') as HTMLElement;
+    const cargaisonArrivee = document.getElementById('cargaison-arrivee') as HTMLElement;
+    const cargaisonTags = document.getElementById('cargaison-tags') as HTMLElement;
+    const produitList = document.getElementById('produit-list') as HTMLElement;
+    const cargaisonInfo = document.getElementById('cargaison-poids') as HTMLElement;
 
-export function displayCargos(): void {
+    if (!cargaisonName || !cargaisonDate || !cargaisonDepart || !cargaisonArrivee  || !cargaisonTags || !produitList || !cargaisonInfo) {
+        console.error('Un ou plusieurs éléments requis sont manquants dans le DOM');
+        return;
+    }
+
+    if (cargaison.etat_Avancement === 'en cours') {
+        alert("Les détails de cette cargaison ne sont pas disponibles car elle est en cours.");
+        return;
+    }
+
+    cargaisonName.textContent = `Cargaison ${cargaison instanceof CargaisonAerienne ? 'Aérienne' : cargaison instanceof CargaisonMaritime ? 'Maritime' : 'Routière'}`;
+    cargaisonDate.textContent = cargaison.dateDepart;
+    cargaisonDepart.textContent = cargaison.dateDepart;
+    cargaisonArrivee.textContent = cargaison.dateArrivee;
+
+    // Calculer et afficher les informations supplémentaires en fonction du mode de remplissage
+    if (cargaison.mode_remplissage === 'poidsMax') {
+        const poidsTotal = cargaison.produits.reduce((sum, p) => sum + p.poids, 0);
+        const poidsRestant = (cargaison.poidsMax ?? 0) - poidsTotal;
+        cargaisonInfo.textContent = `Poids restant: ${poidsRestant} kg`;
+    } else if (cargaison.mode_remplissage === 'produitMax') {
+        const produitsRestants =  (cargaison.produitMax ?? 0)  - cargaison.produits.length;
+        cargaisonInfo.textContent = `Produits restants: ${produitsRestants}`;
+    } else {
+        cargaisonInfo.textContent = '';
+    }
+
+    cargaisonTags.innerHTML = '';
+    const tags = [
+        cargaison instanceof CargaisonAerienne ? 'Aérien' : cargaison instanceof CargaisonMaritime ? 'Maritime' : 'Routier'
+    ];
+    tags.forEach(tag => {
+        const tagElement = document.createElement('span');
+        tagElement.className = `bg-blue-200 text-blue-700 px-2 py-1 rounded mr-2`;
+        tagElement.textContent = tag;
+        cargaisonTags.appendChild(tagElement);
+    });
+
+    produitList.innerHTML = '';
+
+    cargaison.produits.forEach(produit => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap">${produit.libelle}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${produit instanceof Alimentaire ? 'Alimentaire' : produit instanceof Chimique ? 'Chimique' : (produit as Materiel).typeMateriel}</td>
+            <td class="px-6 py-4 whitespace-nowrap">${produit.poids} kg</td>
+            <td class="px-6 py-4 whitespace-nowrap">${cargaison.calculerFrais(produit) / produit.poids} f cfa</td>
+            <td class="px-6 py-4 whitespace-nowrap">${cargaison.calculerFrais(produit)} f cfa</td>
+        `;
+        produitList.appendChild(row);
+    });
+}
+
+const CargaisonList = document.getElementById ('CargaisonList') as HTMLElement ;
+const CargaisonDetail = document.getElementById ('CargaisonDetail') as HTMLElement ;
+let cargaisonCourante = cargos[1];
+
+
+function detailFonction() {
+    const detailButtons = document.querySelectorAll('.detail-btn');
+    detailButtons.forEach(button => {
+        button.addEventListener('click', (event) => {
+            const target = event.target as HTMLElement;
+            const cargoIdString = target.dataset.id; // Récupérez l'ID en tant que chaîne de caractères
+            if (cargoIdString) {
+                const cargoId = parseInt(cargoIdString); // Convertissez l'ID en nombre entier
+                const cargo = filteredCargos.find(cargo => cargo.id === cargoId);
+                if (cargo) {
+                    if (cargo.etat_Avancement === 'en cours') {
+                        alert("Les détails de cette cargaison ne sont pas disponibles car elle est en cours.");
+                        return;
+                    }
+                    cargaisonCourante = cargo;
+                    afficherCargaison(cargaisonCourante);
+                    CargaisonList.classList.add('hidden'); // Masquer la liste des cargaisons
+                    CargaisonDetail.classList.remove('hidden'); // Afficher les détails de la cargaison
+                } else {
+                    console.log('Aucune cargaison trouvée avec cet ID');
+                }
+            } else {
+                console.log("L'ID de la cargaison n'est pas défini dans l'attribut dataset");
+            }
+        });
+    });
+}
+function displayCargos() {
     const tableBody = document.getElementById('cargoTableBody') as HTMLTableElement;
     tableBody.innerHTML = '';
 
     const start = (currentPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
-    const paginatedCargos = filteredCargos.slice(start, end);
+    const paginateCargos = filteredCargos.slice(start, end);
 
-    for (const cargo of paginatedCargos) {
+    paginateCargos.forEach(cargo => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td class="border p-2">${cargo.numero}</td>
             <td class="border p-2">${cargo.mode_remplissage}</td>
-            <td id="champ_value" class="border p-2">${cargo.mode_remplissage === 'produitMax' ? cargo.produitMax : cargo.poidsMax}</td>
+            <td class="border p-2">${cargo.mode_remplissage === 'produitMax' ? cargo.produitMax : cargo.poidsMax}</td>
             <td class="border p-2">${cargo.dateDepart}</td>
             <td class="border p-2">${cargo.dateArrivee}</td>
             <td class="border p-2">${cargo.prix_total}</td>
@@ -84,41 +173,75 @@ export function displayCargos(): void {
             <td class="border p-2">${cargo.distanceKm}</td>
             <td class="border p-2">${cargo.type}</td>
             <td class="border p-2">${cargo.etat_Avancement}</td>
-            <td class="border p-2">${cargo.etat_globale}</td>
+            <td class="border p-2">
+            <button class="state-btn" data-id="${cargo.id}" data-state="${cargo.etat_globale}">
+                ${cargo.etat_globale === 'fermer' ? 'Fermer' : 'Ouvert'}
+            </button>
+        </td>            <td class="border p-2"><button class="detail-btn" data-id="${cargo.id}">Détails</button></td>
         `;
         tableBody.appendChild(row);
-    }
+    });
 
-    updatePaginationControls();
+    detailFonction(); // Ajouter les gestionnaires d'événements pour les boutons "Détails"
+    FermerOuvert() ;
 
 }
 
-// function afficherCargaisons(cargaisons: Cargo[]): void {
-//     const tbody = document.querySelector("#tbody_cargo") as HTMLTableSectionElement;
-//     tbody.innerHTML = "";
+ 
+// Fonction pour attacher les gestionnaires d'événements aux boutons d'état
+function FermerOuvert() {
+    const stateButtons = document.querySelectorAll('.state-btn')  ;
+    stateButtons.forEach(button => {
+        button.addEventListener('click', async (event) => {
+            const target = event.target as HTMLButtonElement | null;
+            if (!target) return;
+        
+            const id = target.dataset.id;
+            if (id) {
+                await CargoState(id);
+            }
+        });
+    });
+}
+async function CargoState(id:string) {
+    const cargo = filteredCargos.find(c => c.id.toString() === id);
+    if (!cargo) return;
 
-//     cargaisons.forEach(cargo => {
-//         const tr = document.createElement("tr");
-//         tr.innerHTML = `
-//             <td>${cargo.id}</td>
-//             <td>${cargo.numero}</td>
-//             <td>${cargo.type}</td>
-//             <td>${cargo.distance_km}</td>
-//             <td>${cargo.prix_total}</td>
-//             <td>${cargo.mode_remplissage === 'produit' ? cargo.produit_max : cargo.poids_max}</td>
-//             <td>${cargo.lieu_depart}</td>
-//             <td>${cargo.lieu_arrivee}</td>
-//             <td>${cargo.mode_remplissage}</td>
-//             <td>${cargo.etat_avancement}</td>
-//             <td>${cargo.etat_globale}</td>
-//         `;
-//         tbody.appendChild(tr);
-//     });
-// }
+    const currentState = cargo.etat_globale.toLowerCase();
+    const newState = currentState === 'ouvert' ? 'fermer' : 'ouvert';
 
+    if (currentState === 'fermer' && cargo.etat_Avancement.toLowerCase() !== 'en attente') {
+        alert('La cargaison ne peut pas être rouverte car elle n\'est pas en attente.');
+        return;
+    }
 
+    // Mettre à jour l'état sur le serveur
+    try {
+        const response = await fetch('api.php', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ...cargo, etat_globale: newState })
+        });
 
-function updatePaginationControls() {
+        if (!response.ok) {
+            const errorMessage = await response.json();
+            alert(errorMessage.message);
+            throw new Error('Failed to update cargo state');
+        }
+
+        // Mettre à jour l'état localement si la mise à jour sur le serveur a réussi
+        cargo.etat_globale = newState;
+        displayCargos();
+
+    } catch (error) {
+        console.error('Error updating cargo state:', error);
+    }
+}
+
+// pagination des tableau
+function PaginationFonction() {
     const pageInfo = document.getElementById('pageInfo') as HTMLSpanElement;
     const prevPageButton = document.getElementById('prevPage') as HTMLButtonElement;
     const nextPageButton = document.getElementById('nextPage') as HTMLButtonElement;
@@ -129,28 +252,6 @@ function updatePaginationControls() {
     prevPageButton.disabled = currentPage === 1;
     nextPageButton.disabled = currentPage === totalPages;
 }
-function applyFilters() {
-    const searchNumero = (document.getElementById('searchNumero') as HTMLInputElement).value.toLowerCase();
-    const filterCategorie = (document.getElementById('filterCategorie') as HTMLSelectElement).value;
-    const filterValue = (document.getElementById('filterValue') as HTMLInputElement).value.toLowerCase();
-
-    filteredCargos = cargos.filter(cargo => {
-        return (
-            (searchNumero === '' || cargo.numero.toLowerCase().includes(searchNumero)) &&
-            (filterCategorie === 'all' ||
-                (filterCategorie === 'dateDepart' && cargo.dateDepart === filterValue) ||
-                (filterCategorie === 'dateArrivee' && cargo.dateArrivee === filterValue) ||
-                (filterCategorie === 'lieu_depart' && cargo.lieu_depart.toLowerCase().includes(filterValue)) ||
-                (filterCategorie === 'lieu_arrivee' && cargo.lieu_arrivee.toLowerCase().includes(filterValue)))
-        );
-    });
-
-    currentPage = 1;
-    displayCargos();
-}       
-
-
-
 document.getElementById('prevPage')?.addEventListener('click', () => {
     if (currentPage > 1) {
         currentPage--;
@@ -166,72 +267,97 @@ document.getElementById('nextPage')?.addEventListener('click', () => {
         
     }
 });
-// Fonction pour soumettre une nouvelle cargaison
-const submitNewCargo: SubmitCallback = (formData) => {
-    const { distance, dateDepart, dateArrivee, type_cargaison, lieu_depart, lieu_arrivee, mode_remplissage } = formData;
 
-    // Ajout de la récupération du mode de remplissage
-    formData.mode_remplissage = modeRemplissage.value;
 
-    console.log(formData);
 
-    // Récupérer les valeurs des champs du formulaire
-    const poidsMaxInput = document.getElementById('poid_max') as HTMLInputElement;
-    const produitMaxInput = document.getElementById('produitMax') as HTMLInputElement;
 
-    // Convertir les valeurs des champs en nombres ou null si le champ est vide
-    const poidsMax = poidsMaxInput.value ? parseFloat(poidsMaxInput.value) : null;
-    const produitMax = produitMaxInput.value ? parseInt(produitMaxInput.value) : null;
 
-    // Déterminer les valeurs finales en fonction du mode de remplissage
-    let finalPoidsMax: number | null = null;
-    let finalProduitMax: number | null = null;
 
-    if (modeRemplissage.value === 'poidsMax') {
-        finalPoidsMax = poidsMax;
-        finalProduitMax = null;
-    } else if (modeRemplissage.value === 'produitMax') {
-        finalPoidsMax = null;
-        finalProduitMax = produitMax;
-    }
+// let currentFilters = {
+//     searchNumero: '',
+//     dateDepart: '',
+//     dateArrivee: '',
+//     lieuDepart: '',
+//     lieuArrivee: '',
+//     Etat: 'fermer' // Filtre par défaut pour les cargaisons fermées
+// };
 
-    console.log(`finalPoidsMax: ${finalPoidsMax}, finalProduitMax: ${finalProduitMax}`);
 
-    // Vérification des champs obligatoires
-    const distanceKm = parseInt(distance);
-    if (isNaN(distanceKm) || !dateDepart || !dateArrivee || !type_cargaison) {
-        alert("Les données du formulaire sont invalides.");
-        return;
-    }
 
-    // Créez une nouvelle cargaison en fonction du type sélectionné
-    let newCargo: Cargaison;
-    switch (type_cargaison) {
-        case "maritime":
-            newCargo = new CargaisonMaritime(distanceKm, dateDepart, dateArrivee, finalPoidsMax, finalProduitMax, lieu_depart, lieu_arrivee, modeRemplissage.value);
-            break;
-        case "aerienne":
-            newCargo = new CargaisonAerienne(distanceKm, dateDepart, dateArrivee, finalPoidsMax, finalProduitMax, lieu_depart, lieu_arrivee, modeRemplissage.value);
-            break;
-        case "routiere":
-            newCargo = new CargaisonRoutiere(distanceKm, dateDepart, dateArrivee, finalPoidsMax, finalProduitMax, lieu_depart, lieu_arrivee, modeRemplissage.value);
-            break;
-        default:
-            alert("Type de cargaison invalide.");
-            return;
-    }
+// filtre des donner 
+const searchNumeroElement = document.getElementById('searchNumero') as HTMLInputElement;
+const dateDepartElement = document.getElementById('DateDepar') as HTMLInputElement;
+const dateArriveeElement = document.getElementById('dateArriv') as HTMLInputElement;
+const lieuDepartElement = document.getElementById('lieuDepart') as HTMLInputElement;
+const lieuArriveeElement = document.getElementById('lieuArrivee') as HTMLInputElement;
+const StatutElement = document.getElementById('statut') as HTMLInputElement;
+const EtatElement = document.getElementById('Etat') as HTMLSelectElement;
 
-    // Enregistrez la nouvelle cargaison sur le serveur
-    saveNewCargoToServer(newCargo)
-        .then(() => {
-            alert("Cargaison ajoutée avec succès.");
-            // Rafraîchissez la liste des cargaisons
-            fetchCargos();
-        })
-        .catch((error) => {
-            alert(`Erreur lors de l'ajout de la cargaison : ${error.message}`);
-        });
-}
+
+const reset = document.getElementById('resetFilters')  as HTMLButtonElement ;
+
+// function applyFilters() {
+//     // Check if the date fields are not empty before converting
+//     const FormaDatDep = dateDepartElement.value ? formatDate(new Date(dateDepartElement.value)) : '';
+//     const FormaDatArr = dateArriveeElement.value ? formatDate(new Date(dateArriveeElement.value)) : '';
+
+//     const searchNumero = searchNumeroElement ? searchNumeroElement.value.toLowerCase() : '';
+//     const dateDepart = FormaDatDep ? FormaDatDep : '';
+//     const dateArrivee = FormaDatArr ? FormaDatArr : '';
+//     const lieuDepart = lieuDepartElement ? lieuDepartElement.value.toLowerCase() : '';
+//     const lieuArrivee = lieuArriveeElement ? lieuArriveeElement.value.toLowerCase() : '';
+//     const statut = StatutElement ? StatutElement.value.toLowerCase() : '';
+//     const etat = EtatElement ? EtatElement.value.toLowerCase() : ''; // Filtre par défaut pour les cargaisons fermées
+//     // console.log(statut);
+    
+//     // console.log(searchNumero, dateDepart, dateArrivee, lieuDepart, lieuArrivee, statut);
+
+//     filteredCargos = cargos.filter(cargo => {
+//         return (
+//             (searchNumero === '' || cargo.numero.toLowerCase().includes(searchNumero)) &&
+//             (dateDepart === '' || cargo.dateDepart === dateDepart) &&
+//             (dateArrivee === '' || cargo.dateArrivee === dateArrivee) &&
+//             (lieuDepart === '' || cargo.lieu_depart.toLowerCase().includes(lieuDepart)) &&
+//             (lieuArrivee === '' || cargo.lieu_arrivee.toLowerCase().includes(lieuArrivee))&&
+//             (statut === '' || cargo.etat_Avancement.toLowerCase().includes(statut)) &&
+//             (etat === '' || cargo.etat_globale.toLowerCase().includes(etat))  // Filtre par défaut pour les cargaisons fermées
+
+//         );
+//     });
+
+//     currentPage = 1;
+//     displayCargos();
+// }
+
+// function resetFilters() {
+//     searchNumeroElement.value = '';
+//     dateArriveeElement.value = '';
+//     dateDepartElement.value = '';
+//     lieuDepartElement.value = '';
+//     lieuArriveeElement.value = '';
+//     StatutElement.value = '';
+//     EtatElement.value = 'Fermer'; // Filtre par défaut pour les cargaisons fermées
+    
+
+//     filteredCargos = [...cargos];  // Reset to original data
+//     currentPage = 1;
+//     displayCargos();
+// }
+// // Add input event listeners to call applyFilters when the input changes
+// searchNumeroElement.addEventListener('input', applyFilters);
+// dateDepartElement.addEventListener('input', applyFilters);
+// dateArriveeElement.addEventListener('input', applyFilters);
+// lieuDepartElement.addEventListener('input', applyFilters);
+// lieuArriveeElement.addEventListener('input', applyFilters);
+// StatutElement.addEventListener('input', applyFilters);
+// EtatElement.addEventListener('change', applyFilters);
+
+// // Add click event listener for the reset button
+// reset.addEventListener('click', resetFilters);
+
+
+
+
 
 
 // Récupération des champs du formulaire
@@ -247,15 +373,87 @@ const formFields: FormField[] = Array.from(
 });
 
 // Initialisation du formulaire
+const submitNewCargo: SubmitCallback = (formData) => {
+    const { distance, dateDepart, dateArrivee, type_cargaison, lieu_depart, lieu_arrivee, mode_remplissage } = formData;
+
+    formData.mode_remplissage = modeRemplissage.value;
+
+    const poidsMaxInput = document.getElementById('poid_max') as HTMLInputElement;
+    const produitMaxInput = document.getElementById('produitMax') as HTMLInputElement;
+
+    const poidsMax = poidsMaxInput.value ? parseFloat(poidsMaxInput.value) : null;
+    const produitMax = produitMaxInput.value ? parseInt(produitMaxInput.value) : null;
+
+    let finalPoidsMax: number | null = null;
+    let finalProduitMax: number | null = null;
+
+    if (formData.mode_remplissage === 'poidsMax') {
+        finalPoidsMax = poidsMax;
+        finalProduitMax = null;
+    } else if (formData.mode_remplissage === 'produitMax') {
+        finalPoidsMax = null;
+        finalProduitMax = produitMax;
+    }
+
+    const distanceKm = parseInt(distance);
+    if (isNaN(distanceKm) || !dateDepart || !dateArrivee || !type_cargaison) {
+        alert("Les données du formulaire sont invalides.");
+        return;
+    }
+
+  
+    
+    const dateOrderValidation = isDateAfter(dateDepart, dateArrivee);
+    const ErrorDepart =   document.getElementById('dateDepartError') as HTMLSpanElement
+    const ErrorArrivee =   document.getElementById('dateArriveeError') as HTMLSpanElement
+
+    if (!dateOrderValidation.valid) {
+
+        ErrorArrivee.innerText = dateOrderValidation.errorMessage;
+        return;
+    }
+    else{
+
+        ErrorArrivee.innerText = "";
+
+        let newCargo: Cargaison;
+    switch (type_cargaison) {
+        case "maritime":
+            newCargo = new CargaisonMaritime(distanceKm, dateDepart, dateArrivee, finalPoidsMax, finalProduitMax, lieu_depart, lieu_arrivee, formData.mode_remplissage);
+            break;
+        case "aerienne":
+            newCargo = new CargaisonAerienne(distanceKm, dateDepart, dateArrivee, finalPoidsMax, finalProduitMax, lieu_depart, lieu_arrivee, formData.mode_remplissage);
+            break;
+        case "routiere":
+            newCargo = new CargaisonRoutiere(distanceKm, dateDepart, dateArrivee, finalPoidsMax, finalProduitMax, lieu_depart, lieu_arrivee, formData.mode_remplissage);
+            break;
+        default:
+            alert("Type de cargaison invalide.");
+            return;
+    }
+
+    saveNewCargoToServer(newCargo)
+        .then(() => {
+            alert("Cargaison ajoutée avec succès.");
+            fetchCargos();
+        })
+        .catch((error) => {
+            alert(`Erreur lors de l'ajout de la cargaison : ${error.message}`);
+        });
+    }
+
+    
+};                                                          
+
 new Formulaire("cargaisonForm", formFields, submitNewCargo);
-
-
-document.getElementById('applyFilters')?.addEventListener('click', applyFilters);
 
 fetchCargos();
 
+
+// // Initialiser les filtres par défaut
 // document.addEventListener('DOMContentLoaded', () => {
-   
-//     // Récupérer les données dès le chargement de la page
-//     fetchCargos();
+//     EtatElement.value = 'fermer';
+//     applyFilters();
 // });
+
+detailFonction();

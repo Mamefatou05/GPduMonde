@@ -77,7 +77,6 @@ export class Formulaire {
         }
     }
 }
-
 export const validators = {
     isNotEmpty: (value: string) => {
         const isValid = value.trim().length > 0;
@@ -95,29 +94,45 @@ export const validators = {
         };
     },
     isPositiveNumberNull: (value: string) => {
-        // Vérifiez si la chaîne est vide
         if (value.trim() === '') {
             return {
                 valid: true,
                 errorMessage: ''
             };
         }
-        // Convertissez la valeur en nombre
         const number = parseFloat(value);
-        // Vérifiez si la valeur est un nombre positif
         const isValid = !isNaN(number) && number > 0;
         return {
             valid: isValid,
             errorMessage: isValid ? '' : 'Le poids doit être un nombre positif.'
         };
     },
-    
     isValidDate: (value: string) => {
+        const today = new Date().toISOString().split("T")[0];
         const date = new Date(value);
         const isValid = !isNaN(date.getTime());
+        let errorMessage = '';
+
+        if (!isValid) {
+            errorMessage = "La date n'est pas valide.";
+        } else if (value < today) {
+            errorMessage = "Date de départ doit être aujourd'hui ou plus tard.";
+        }
+
         return {
-            valid: isValid,
-            errorMessage: isValid ? '' : 'La date n\'est pas valide.'
+            valid: isValid && value >= today,
+            errorMessage: errorMessage
         };
-    }
+    },
+    
+};
+
+export const isDateAfter = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const isValid = start < end;
+    return {
+        valid: isValid,
+        errorMessage: isValid ? '' : "Date d'arrivée doit être après la date de départ."
+    };
 };

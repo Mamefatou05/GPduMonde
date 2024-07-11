@@ -4,7 +4,8 @@ module.exports = {
     mode: "development",
     entry: {
         dashboard: "./src/dashboard.ts",
-        cargaisons: "./src/cargaisons.ts"
+        cargaisons: "./src/cargaisons.ts",
+        details:"./src/detail.ts"
     },
     resolve: {
         extensions: [".ts", ".js"]

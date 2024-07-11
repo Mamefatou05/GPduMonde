@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire en étapes dans un Modal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hidden {
+            display: none;
+        }
+        .visible {
+            display: block;
+        }
+        .step-primary {
+            background-color: #6b5b95;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Bouton pour ouvrir le modal -->
+    <button id="openModalButton" class="bg-purple-600 text-white p-3 m-4">Ajouter Produit</button>
+
+    <!-- Modal -->
+    <div id="produitModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-white p-8 rounded shadow-lg w-full max-w-2xl">
+                <h2 class="text-2xl mb-4">Ajouter un Produit</h2>
+
+                <ul class="steps flex justify-between mb-6">
+                    <li class="step step-primary" id="step1Indicator">Informations du produit</li>
+                    <li class="step" id="step2Indicator">Informations du client</li>
+                    <li class="step" id="step3Indicator">Informations du Destinataire</li>
+                </ul>
+
+                <form id="produitForm">
+                    <div id="step1" class="step-content visible">
+                        <h3 class="text-xl mb-2">Informations du produit</h3>
+                        <label for="libelle">Libellé</label>
+                        <input type="text" id="libelle" name="libelle" class="border p-2 w-full mb-4" required>
+
+                        <label for="poids">Poids (kg)</label>
+                        <input type="number" id="poids" name="poids" class="border p-2 w-full mb-4" required>
+
+                        <label for="type_produit">Type de Produit</label>
+                        <select id="type_produit" name="type_produit" class="border p-2 w-full mb-4" required>
+                            <option value="alimentaire">Alimentaire</option>
+                            <option value="chimique">Chimique</option>
+                            <option value="materiel">Matériel</option>
+                        </select>
+                        <div id="extraFields" class="mb-4"></div>
+
+                        <button type="button" class="bg-purple-600 text-white p-2" onclick="nextStep(1)">Suivant</button>
+                    </div>
+
+                    <div id="step2" class="step-content hidden">
+                        <h3 class="text-xl mb-2">Informations du Client</h3>
+                        <label for="client_nom">Nom</label>
+                        <input type="text" id="client_nom" name="client_nom" class="border p-2 w-full mb-4" required>
+
+                        <label for="client_prenom">Prenom</label>
+                        <input type="text" id="client_prenom" name="client_prenom" class="border p-2 w-full mb-4" required>
+
+                        <label for="client_telephone">Téléphone</label>
+                        <input type="text" id="client_telephone" name="client_telephone" class="border p-2 w-full mb-4" required>
+
+                        <label for="client_adresse">Adresse</label>
+                        <input type="text" id="client_adresse" name="client_adresse" class="border p-2 w-full mb-4" required>
+
+                        <label for="client_email">Email</label>
+                        <input type="text" id="client_email" name="client_email" class="border p-2 w-full mb-4" required>
+
+                        <button type="button" class="bg-gray-500 text-white p-2 mr-2" onclick="prevStep(2)">Précédent</button>
+                        <button type="button" class="bg-purple-600 text-white p-2" onclick="nextStep(2)">Suivant</button>
+                    </div>
+
+                    <div id="step3" class="step-content hidden">
+                        <h3 class="text-xl mb-2">Informations du Destinataire</h3>
+                        <label for="destinataire_nom">Nom</label>
+                        <input type="text" id="destinataire_nom" name="destinataire_nom" class="border p-2 w-full mb-4" required>
+
+                        <label for="destinataire_prenom">Prenom</label>
+                        <input type="text" id="destinataire_prenom" name="destinataire_prenom" class="border p-2 w-full mb-4" required>
+
+                        <label for="destinataire_telephone">Téléphone</label>
+                        <input type="text" id="destinataire_telephone" name="destinataire_telephone" class="border p-2 w-full mb-4" required>
+
+                        <label for="destinataire_adresse">Adresse</label>
+                        <input type="text" id="destinataire_adresse" name="destinataire_adresse" class="border p-2 w-full mb-4" required>
+
+                        <label for="destinataire_email">Email</label>
+                        <input type="text" id="destinataire_email" name="destinataire_email" class="border p-2 w-full mb-4" required>
+
+                        <button type="button" class="bg-gray-500 text-white p-2 mr-2" onclick="prevStep(3)">Précédent</button>
+                        <button class="bg-purple-600 text-white p-2" type="submit">Ajouter Produit</button>
+                    </div>
+                </form>
+
+                <button id="closeModalButton" class="mt-4 bg-gray-500 text-white p-2">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('openModalButton').addEventListener('click', function() {
+            document.getElementById('produitModal').classList.remove('hidden');
+        });
+
+        document.getElementById('closeModalButton').addEventListener('click', function() {
+            document.getElementById('produitModal').classList.add('hidden');
+        });
+
+        function nextStep(currentStep) {
+            document.getElementById(`step${currentStep}`).classList.remove('visible');
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+            document.getElementById(`step${currentStep + 1}`).classList.remove('hidden');
+            document.getElementById(`step${currentStep + 1}`).classList.add('visible');
+
+            document.getElementById(`step${currentStep}Indicator`).classList.remove('step-primary');
+            document.getElementById(`step${currentStep + 1}Indicator`).classList.add('step-primary');
+        }
+
+        function prevStep(currentStep) {
+            document.getElementById(`step${currentStep}`).classList.remove('visible');
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+            document.getElementById(`step${currentStep - 1}`).classList.remove('hidden');
+            document.getElementById(`step${currentStep - 1}`).classList.add('visible');
+
+            document.getElementById(`step${currentStep}Indicator`).classList.remove('step-primary');
+            document.getElementById(`step${currentStep - 1}Indicator`).classList.add('step-primary');
+        }
+    </script>
+
+</body>
+</html>

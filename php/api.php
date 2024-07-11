@@ -93,20 +93,30 @@ if ($requestMethod === 'POST') {
 // Gestion des requêtes PUT ou PATCH
 if ($requestMethod === 'PUT' || $requestMethod === 'PATCH') {
     $updatedCargaison = json_decode(file_get_contents('php://input'), true);
+
     foreach ($data['cargaisons'] as &$cargaison) {
         if ($cargaison['id'] == $updatedCargaison['id']) {
+            // Normaliser les états en minuscules pour comparaison cohérente
+            $currentState = strtolower($cargaison['state']);
+            $newState = strtolower($updatedCargaison['state']);
+            $currentAdvancement = strtolower($cargaison['advancement']);
+
             // Si la cargaison est fermée, vérifier si elle peut être rouverte
-            if ($cargaison['state'] === 'fermé' && $updatedCargaison['state'] === 'ouvert') {
-                if ($cargaison['advancement'] === 'EN ATTENTE') {
+            if ($currentState === 'fermer' && $newState === 'ouvert') {
+                if ($currentAdvancement === 'en attente') {
                     $cargaison['state'] = 'ouvert';
                 } else {
                     http_response_code(403); // Forbidden
-                    echo json_encode(array("message" => "La cargaison ne peut pas être rouverte"));
+                    echo json_encode(array("message" => "La cargaison ne peut pas être rouverte car elle n'est pas en attente."));
                     return;
                 }
+            // Si la cargaison est ouverte, permettre la fermeture
+            } else if ($currentState === 'ouvert' && $newState === 'fermer') {
+                $cargaison['state'] = 'fermer';
             } else {
                 $cargaison = $updatedCargaison;
             }
+
             saveData($data);
             http_response_code(200);
             echo json_encode(array("message" => "Cargaison mise à jour avec succès"));
@@ -116,6 +126,7 @@ if ($requestMethod === 'PUT' || $requestMethod === 'PATCH') {
     http_response_code(404);
     echo json_encode(array("message" => "Cargaison non trouvée"));
 }
+
 
 // Gestion des requêtes DELETE
 if ($requestMethod === 'DELETE') {

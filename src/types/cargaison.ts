@@ -1,5 +1,4 @@
 import { Produit, Alimentaire, Chimique, Materiel } from '../produit';
-import { displayCargos } from '../cargaisons';
 
 export interface ICargaison {
     id: number;
@@ -24,8 +23,18 @@ export interface ICargaison {
     sommePoids(): number;
     nbProduits(): number;
 }
+
+
+export const formatDate = (date: Date) => {
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+
 export abstract class Cargaison implements ICargaison {
-    static dernierNumero: number = 0; // Attribut statique pour suivre le dernier numéro attribué
+    private static dernierId: number = 0; // Static attribute to track the last assigned number
 
     id: number;
     numero: string;
@@ -54,22 +63,37 @@ export abstract class Cargaison implements ICargaison {
         lieu_arrivee: string,
         mode_remplissage: string,
     ) {
-        this.id = ++Cargaison.dernierNumero; // Increment last number and assign to id
-        this.numero = Cargaison.genererNumero();
+        // this.id = ++Cargaison.dernierId; // Increment last number and assign to id
+        this.id = ++Cargaison.dernierId;
+        this.numero = Cargaison.genererNumero(this.id);
         this.poidsMax = poidsMax;
         this.produitMax = produitMax;
         this.prix_total = 0; // Initialize prix_total to 0
         this.lieu_depart = lieu_depart;
         this.lieu_arrivee = lieu_arrivee;
         this.produits = []; // Initialize produits to an empty array
-        this.dateDepart = this.formatDate(new Date(dateDepart));
-        this.dateArrivee = this.formatDate(new Date(dateArrivee));
+        this.dateDepart = formatDate(new Date(dateDepart));
+        this.dateArrivee = formatDate(new Date(dateArrivee));
         this.mode_remplissage = mode_remplissage;
         this.etat_Avancement = "En attente";
         this.etat_globale = "ouvert";
         this.type = type;
         this.distanceKm = distance;
     }
+
+    static genererIdUnique(): number {
+        return Date.now();
+    }
+    
+    // private static genrerId(): number {
+    //     return Math.floor(Math.random() * 10);
+    // }
+    static genererNumero(id: number): string {
+        return `CRG${id.toString().padStart(3, '0')}`;
+    }
+
+
+    abstract calculerFrais(produit: Produit): number;
 
     ajouterProduit(produit: Produit): void {
         if (this.produitMax && this.produits.length >= this.produitMax) {
@@ -97,21 +121,6 @@ export abstract class Cargaison implements ICargaison {
         console.log(`Montant actuel de la cargaison: ${this.sommeTotale()}`);
     }
 
-    // Méthode statique pour générer le prochain numéro de cargaison
-    private static genererNumero(): string {
-        const prochainNumero = Cargaison.dernierNumero;
-        return `CRG${prochainNumero.toString().padStart(3, '0')}`;
-    }
-
-    private formatDate(date: Date): string {
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Les mois sont indexés de 0 à 11
-        const year = date.getUTCFullYear();
-        return `${day}/${month}/${year}`;
-    }
-
-    abstract calculerFrais(produit: Produit): number;
-
     sommeTotale(): number {
         return this.produits.reduce((total, produit) => total + this.calculerFrais(produit), 0);
     }
@@ -138,6 +147,7 @@ export class CargaisonMaritime extends Cargaison {
     ) {
         super(distance, dateDepart, dateArrivee, poidsMax, produitMax, "maritime", lieu_depart, lieu_arrivee, mode_remplissage);
     }
+
     calculerFrais(produit: Produit): number {
         return produit.poids * this.distanceKm * 90;
     }
@@ -156,6 +166,7 @@ export class CargaisonAerienne extends Cargaison {
     ) {
         super(distance, dateDepart, dateArrivee, poidsMax, produitMax, "aerienne", lieu_depart, lieu_arrivee, mode_remplissage);
     }
+
     calculerFrais(produit: Produit): number {
         return produit.poids * this.distanceKm * 100;
     }
@@ -174,6 +185,7 @@ export class CargaisonRoutiere extends Cargaison {
     ) {
         super(distance, dateDepart, dateArrivee, poidsMax, produitMax, "routiere", lieu_depart, lieu_arrivee, mode_remplissage);
     }
+
     calculerFrais(produit: Produit): number {
         return produit.poids * this.distanceKm * 300;
     }

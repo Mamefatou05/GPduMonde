@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .navbar {
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .navbar-transparent {
+            background-color: transparent;
+            box-shadow: none;
+        }
+        .navbar-solid {
+            background-color: white;
+            box-shadow: 0 4px 2px -2px gray;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+    <div class="container mx-auto p-6">
+        <header class="navbar navbar-transparent fixed w-full flex justify-between items-center py-4">
+            <h1 class="text-3xl font-bold">GP Du Monde</h1>
+            <nav class="space-x-4">
+                <a href="#" class="text-lg text-gray-700 hover:text-gray-900">Dashboard</a>
+                <a href="#" class="text-lg text-gray-700 hover:text-gray-900">Cargaisons</a>
+                <a href="#" class="text-lg text-gray-700 hover:text-gray-900">Cargaison (Ouvert)</a>
+                <a href="#" class="text-lg text-gray-700 hover:text-gray-900">Clients</a>
+                <a href="#" class="text-lg text-gray-700 hover:text-gray-900">Produit</a>
+            </nav>
+        </header>
+
+        <main class="bg-white p-8 rounded-lg shadow-md mt-16">
+            <div>
+                <h2 class="text-2xl font-semibold mb-4">Cargaisons</h2>
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-2">Filtré par :</h3>
+                    <div class="space-y-2">
+                        <div>
+                            <input type="checkbox" id="numero" class="mr-2">
+                            <label for="numero">Numéro</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="mode" class="mr-2">
+                            <label for="mode">Mode Remplissage</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="date-depart" class="mr-2">
+                            <label for="date-depart">Date de Départ</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="type" class="mr-2">
+                            <label for="type">Type</label>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="flex space-x-4 mb-6">
+                    <button class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Réinitialiser</button>
+                    <button class="bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600">Modifier Cargaison</button>
+                    <button class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 ml-auto">Ajouter Cargaison</button>
+                    <button class="bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600">Ajouter Produit</button>
+                </div>
+    
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border-collapse bg-white shadow-md">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="border p-2">NUMÉRO</th>
+                                <th class="border p-2">MODE</th>
+                                <th class="border p-2">POIDS/PRODUIT MAX</th>
+                                <th class="border p-2">DATE DÉPART</th>
+                                <th class="border p-2">DATE ARRIVÉE</th>
+                                <th class="border p-2">LIEU DÉPART</th>
+                                <th class="border p-2">LIEU ARRIVÉE</th>
+                                <th class="border p-2">TYPE</th>
+                                <th class="border p-2">STATUT</th>
+                                <th class="border p-2">ACTIONS</th>
+                                <th class="border p-2">DÉTAILS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG001</td>
+                                <td class="border p-2">produitMax</td>
+                                <td class="border p-2">10</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">France</td>
+                                <td class="border p-2">Italie</td>
+                                <td class="border p-2">maritime</td>
+                                <td class="border p-2">En attente</td>
+                                <td class="border p-2">Ouvert</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG002</td>
+                                <td class="border p-2">produitMax</td>
+                                <td class="border p-2">10</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">France</td>
+                                <td class="border p-2">Italie</td>
+                                <td class="border p-2">aerienne</td>
+                                <td class="border p-2">En attente</td>
+                                <td class="border p-2">Fermer</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG003</td>
+                                <td class="border p-2">poidsMax</td>
+                                <td class="border p-2">5000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">Paris</td>
+                                <td class="border p-2">Londres</td>
+                                <td class="border p-2">maritime</td>
+                                <td class="border p-2">Terminer</td>
+                                <td class="border p-2">Fermer</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG004</td>
+                                <td class="border p-2">poidsMax</td>
+                                <td class="border p-2">5000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">Paris</td>
+                                <td class="border p-2">Londres</td>
+                                <td class="border p-2">maritime</td>
+                                <td class="border p-2">en cours</td>
+                                <td class="border p-2">Fermer</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG005</td>
+                                <td class="border p-2">poidsMax</td>
+                                <td class="border p-2">5000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">Paris</td>
+                                <td class="border p-2">Londres</td>
+                                <td class="border p-2">maritime</td>
+                                <td class="border p-2">En attente</td>
+                                <td class="border p-2">Ouvert</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG005</td>
+                                <td class="border p-2">poidsMax</td>
+                                <td class="border p-2">5000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">Paris</td>
+                                <td class="border p-2">Londres</td>
+                                <td class="border p-2">maritime</td>
+                                <td class="border p-2">En attente</td>
+                                <td class="border p-2">Ouvert</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG005</td>
+                                <td class="border p-2">poidsMax</td>
+                                <td class="border p-2">5000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">Paris</td>
+                                <td class="border p-2">Londres</td>
+                                <td class="border p-2">maritime</td>
+                                <td class="border p-2">En attente</td>
+                                <td class="border p-2">Ouvert</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG005</td>
+                                <td class="border p-2">poidsMax</td>
+                                <td class="border p-2">5000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">Paris</td>
+                                <td class="border p-2">Londres</td>
+                                <td class="border p-2">maritime</td>
+                                <td class="border p-2">En attente</td>
+                                <td class="border p-2">Ouvert</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                            <tr class="bg-white hover:bg-gray-100">
+                                <td class="border p-2">CRG005</td>
+                                <td class="border p-2">poidsMax</td>
+                                <td class="border p-2">5000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">10/12/2000</td>
+                                <td class="border p-2">Paris</td>
+                                <td class="border p-2">Londres</td>
+                                <td class="border p-2">maritime</td>
+                                <td class="border p-2">En attente</td>
+                                <td class="border p-2">Ouvert</td>
+                                <td class="border p-2">Détails</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+    
+                <div class="flex justify-between mt-4">
+                    <button class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600">Précédent</button>
+                    <button class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600">Suivant</button>
+                </div>
+            </div>
+           
+        </main>
+    </div>
+
+    <script>
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 0) {
+                navbar.classList.remove('navbar-transparent');
+                navbar.classList.add('navbar-solid');
+            } else {
+                navbar.classList.remove('navbar-solid');
+                navbar.classList.add('navbar-transparent');
+            }
+        });
+    </script>
+</body>
+</html>

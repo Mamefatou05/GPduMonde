@@ -3,20 +3,22 @@
         height: 180px;
     }
 </style>
-<div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Cargaisons</h1>
 
 
-    <!-- You can open the modal using ID.showModal() method -->
-    <button class="btn" onclick="my_modal_3.showModal()">Ajouter Cargaison</button>
-    <dialog id="my_modal_3" class="modal">
-        <div class="modal-box">
-            <form method="dialog">
-                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-            </form>
-            <!-- Formulaire pour ajouter une cargaison -->
+<section id="CargaisonList" class="">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Cargaisons</h1>
+
+
+        <!-- You can open the modal using ID.showModal() method -->
+        <button class="btn" onclick="my_modal_3.showModal()">Ajouter Cargaison</button>
+        <dialog id="my_modal_3" class="">
+            <div class="container absolute">
+                <form method="dialog" <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                </form>
+                <!-- Formulaire pour ajouter une cargaison -->
                 <h1 class="text-2xl font-bold text-gray-700 mb-6">Ajouter une Cargaison</h1>
-                <div class="bg-gray-100 p-4 rounded shadow-md">
+                <div class="bg-gray-100  p-4 rounded shadow-md">
                     <form id="cargaisonForm" method="POST" class="space-y-4">
                         <div class="w-1/2">
                             <label for="type_cargaison" class="block text-sm font-medium text-gray-700">Type de Cargaison</label>
@@ -82,53 +84,125 @@
                         <div id="map"></div>
                     </form>
                 </div>
+            </div>
+        </dialog>
+
+        <!-- Filters and search -->
+        <div class="bg-white p-4 rounded text-black shadow-md mb-4 flex flex-col mt-4">
+            <div>
+                <input type="text" id="searchNumero" placeholder="Recherche par Numéro" class="border p-2 mb-2 w-full rounded">
+            </div>
+            <div class="flex flex-row">
+                <div class="mb-2">
+                    <label for="DateDepar" class="block">Date de Départ</label>
+                    <input type="date" id="DateDepar" class="border p-2 w-full rounded">
+                </div>
+                <div class="mb-2">
+                    <label for="dateArriv" class="block">Date d'Arrivée</label>
+                    <input type="date" id="dateArriv" class="border p-2 w-full rounded">
+                </div>
+                <div class="mb-2">
+                    <label for="lieuDepart" class="block">Lieu de Départ</label>
+                    <input type="text" id="lieuDepart" placeholder="Lieu de Départ" class="border p-2 w-full rounded">
+                </div>
+                <div class="mb-2">
+                    <label for="lieuArrivee" class="block">Lieu d'Arrivée</label>
+                    <input type="text" id="lieuArrivee" placeholder="Lieu d'Arrivée" class="border p-2 w-full rounded">
+                </div>
+                <div class="mb-2">
+                    <label for="statut" class="block">Status</label>
+                    <input type="text" id="statut" placeholder="status" class="border p-2 w-full rounded">
+                </div>
+                <div class="mb-2">
+                    <select id="Etat">
+                        <option value="fermer">Fermé</option>
+                        <option value="">Tous</option>
+                        <option value="ouvert">Ouvert</option>
+                    </select>
+                </div>
+
+
+            </div>
+
+            <!-- New Reset Button -->
+            <button id="resetFilters" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Réinitialiser</button>
         </div>
-    </dialog>
 
-    <!-- Filters and search -->
-    <div class="mb-4 mt-4">
-        <input type="text" id="searchNumero" placeholder="Recherche par Numéro" class="border p-2 mb-2">
-        <select id="filterCategorie" class="border p-2">
-            <option value="all">Toutes les catégories</option>
-            <option value="date_depart">Date de Départ</option>
-            <option value="date_arrivee">Date d'Arrivée</option>
-            <option value="lieu_depart">Lieu de Départ</option>
-            <option value="lieu_arrivee">Lieu d'Arrivée</option>
-        </select>
-        <input type="text" id="filterValue" placeholder="Valeur du Filtre" class="border p-2">
-        <button id="applyFilters" class="bg-green-500 text-white p-2">Appliquer Filtres</button>
+
+        <!-- Table to display cargos -->
+        <table class="table-auto text-sm w-full border-collapse border text-black">
+            <thead>
+                <tr>
+                    <th class="border p-2">Numéro</th>
+                    <th class="border p-2">Mode de remplissage</th>
+                    <th class="border p-2">Poids Max/produit Max</th>
+                    <th class="border p-2">Date Départ</th>
+                    <th class="border p-2">Date Arrivée</th>
+                    <th class="border p-2">Prix Total</th>
+                    <th class="border p-2">Lieu Départ</th>
+                    <th class="border p-2">Lieu Arrivée</th>
+                    <th class="border p-2">Distance (km)</th>
+                    <th class="border p-2">Type</th>
+                    <th class="border p-2">Statut</th>
+                    <th class="border p-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="cargoTableBody">
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+
+        <!-- Pagination controls -->
+        <div id="paginationControls" class="mt-4">
+            <button id="prevPage" class="bg-gray-500 text-white p-2">Précédent</button>
+            <span id="pageInfo" class="mx-2"></span>
+            <button id="nextPage" class="bg-gray-500 text-white p-2">Suivant</button>
+        </div>
     </div>
+</section>
+<section id="CargaisonDetail" class="hidden">
+    <div class="w-full m-4">
 
-    <!-- Table to display cargos -->
-    <table class="table-auto text-sm w-full border-collapse border">
-        <thead>
-            <tr>
-                <th class="border p-2">Numéro</th>
-                <th class="border p-2">Mode de remplissage</th>
-                <th class="border p-2">Poids Max/produit Max</th>
-                <th class="border p-2">Date Départ</th>
-                <th class="border p-2">Date Arrivée</th>
-                <th class="border p-2">Prix Total</th>
-                <th class="border p-2">Lieu Départ</th>
-                <th class="border p-2">Lieu Arrivée</th>
-                <th class="border p-2">Distance (km)</th>
-                <th class="border p-2">Type</th>
-                <th class="border p-2">Statut</th>
-                <th class="border p-2">Actions</th>
-            </tr>
-        </thead>
-        <tbody id="cargoTableBody">
-            <!-- Data will be inserted here dynamically -->
-        </tbody>
-    </table>
+        <div class="flex justify-between items-center mb-6">
+            <h1 id="cargaison-name" class="text-2xl font-bold text-gray-700"></h1>
+            <div>
+                <button id="cargaison-date" class="bg-purple-600 text-white px-4 py-2 rounded"></button>
+            </div>
+        </div>
 
-    <!-- Pagination controls -->
-    <div id="paginationControls" class="mt-4">
-        <button id="prevPage" class="bg-gray-500 text-white p-2">Précédent</button>
-        <span id="pageInfo" class="mx-2"></span>
-        <button id="nextPage" class="bg-gray-500 text-white p-2">Suivant</button>
+        <div class="bg-white p-4 rounded shadow-md mb-6">
+            <div class="container flex justify-between">
+                <div class="flex items-center mb-4">
+                    <span id="cargaison-type-icon" class="block w-8 h-8 bg-gray-200 rounded-full mr-4"></span>
+                    <div>
+                        <span id="cargaison-type" class="text-lg font-bold text-purple-700"></span>
+                        <div id="cargaison-tags" class="flex mt-1">
+                            <!-- Tags will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <button class="bg-purple-600 text-white px-4 py-2 rounded" id="produits-link2">Produits / Colis</button>
+                </div>
+            </div>
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-gray-700">Départ:</span>
+                    <span id="cargaison-depart" class="text-purple-700 font-bold"></span>
+                </div>
+                <div>
+                    <span class="text-gray-700">Arrivée:</span>
+                    <span id="cargaison-arrivee" class="text-purple-700 font-bold"></span>
+                </div>
+                <div>
+                    <span class="text-gray-700"></span>
+                    <span id="cargaison-poids" class="text-purple-700 font-bold"></span>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+</section>
+
 
 <script src="../dist/cargaisons.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
